@@ -1,4 +1,4 @@
-"""Call /add and /subtract with (counter, 1) and publish the results."""
+"""Call /add and /subtract with (counter, operand) and publish the results."""
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
@@ -12,6 +12,8 @@ from num_interfaces.srv import Compute
 class CalcClient(Node):
     def __init__(self):
         super().__init__('calc_client')
+        # Second operand b of every request: add(counter, b) / subtract(counter, b)
+        self._operand = float(self.declare_parameter('operand', 1.0).value)
         self._ops = []
         for name in ('add', 'subtract'):
             client = self.create_client(Compute, name)
@@ -27,7 +29,7 @@ class CalcClient(Node):
             if not client.service_is_ready():
                 self.get_logger().warn(f'{client.srv_name} not available', throttle_duration_sec=5.0)
                 continue
-            future = client.call_async(Compute.Request(a=float(msg.data), b=1.0))
+            future = client.call_async(Compute.Request(a=float(msg.data), b=self._operand))
             future.add_done_callback(
                 lambda f, pub=pub: pub.publish(Float64(data=f.result().result)))
 

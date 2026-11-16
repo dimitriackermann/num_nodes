@@ -13,12 +13,12 @@ from num_interfaces.srv import Compute
 class CalcServer(Node):
     def __init__(self):
         super().__init__('calc_server')
+        # Publish request/response events so rosbag2 can record the service calls.
+        introspection = self.declare_parameter('introspection', True).value
+        state = ServiceIntrospectionState.CONTENTS if introspection else ServiceIntrospectionState.OFF
         for name, op in (('add', add), ('subtract', subtract)):
             srv = self.create_service(Compute, name, self._handler(op))
-            # Publish request/response events so rosbag2 can record the service calls.
-            srv.configure_introspection(
-                self.get_clock(), qos_profile_system_default,
-                ServiceIntrospectionState.CONTENTS)
+            srv.configure_introspection(self.get_clock(), qos_profile_system_default, state)
 
     @staticmethod
     def _handler(op):
